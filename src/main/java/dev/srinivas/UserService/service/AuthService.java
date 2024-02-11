@@ -10,21 +10,20 @@ import dev.srinivas.UserService.model.SessionStatus;
 import dev.srinivas.UserService.model.User;
 import dev.srinivas.UserService.repository.SessionRepository;
 import dev.srinivas.UserService.repository.UserRepository;
-import org.apache.commons.lang3.RandomStringUtils;
+import io.jsonwebtoken.Jwt;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.MacAlgorithm;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.MultiValueMapAdapter;
-import org.springframework.web.servlet.function.ServerRequest;
 
+import javax.crypto.SecretKey;
 import java.time.LocalDate;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class AuthService {
@@ -56,9 +55,27 @@ public class AuthService {
         if(!bCryptPasswordEncoder.matches(password, user.getPassword())){
             throw new InvalidCredentialException("Invalid Credentials");
         }
+        //This random string generation token was used for temporary purpose
+        //String token = RandomStringUtils.randomAlphanumeric(30);
 
-        String token = RandomStringUtils.randomAlphanumeric(30);
+        //Moving to JWT Token
+        //Token Generation
+        MacAlgorithm algorithm = Jwts.SIG.HS256; //HS256 algo added for JWT
+        SecretKey key = algorithm.key().build(); //generating the secret key
 
+        //start adding the claims
+        Map<String,Object> jsonForJWT = new HashMap<>();
+        jsonForJWT.put("userId", user.getId());
+        jsonForJWT.put("roles", user.getRoles());
+        jsonForJWT.put("createdAt", new Date());
+        jsonForJWT.put("expiryAt", new Date(LocalDate.now().plusDays(3).toEpochDay()));
+
+        String token = Jwts.builder()
+                .claims(jsonForJWT) //added the claims
+                .signWith(key,algorithm)  //added the algo and key
+                .compact(); //building the token
+
+        //session creation
         Session session = new Session();
 
         session.setLoginAt(new Date());
@@ -70,7 +87,7 @@ public class AuthService {
         UserDto userDto = UserEntityDTOMapper.getUserDTOFromUserEntity(user);
 
         MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
-        headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + token);
+        headers.add(HttpHeaders.SET_COOKIE, token);
 
         ResponseEntity<UserDto> response = new ResponseEntity<>(userDto, headers, HttpStatus.OK);
 
@@ -78,11 +95,11 @@ public class AuthService {
     }
 
     public ResponseEntity<Void> logout(String token, Long userId){
-
+        // validations -> token exists, token is not expired, user exists else throw exception
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUser_Id(token, userId);
 
         if(sessionOptional.isEmpty()){
-            return null;
+            return null; // TODO throw exception here
         }
 
         Session session = sessionOptional.get();
@@ -102,6 +119,10 @@ public class AuthService {
     }
 
     public SessionStatus validate(String token, Long userId){
+        //TODO check expiry // Jwts Parser -> parse the encoded JWT token to read the claims
+        // Parses the JWT token and returns the claims
+//        JwtParser jwtParser = Jwts.parser().build();
+//        Jwt<?, ?> claims =jwtParser.parse(token);
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUser_Id(token, userId);
 
         if(sessionOptional.isEmpty() || sessionOptional.get().getSessionStatus().equals(SessionStatus.ENDED)){

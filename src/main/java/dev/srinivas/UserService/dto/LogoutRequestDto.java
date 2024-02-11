@@ -7,6 +7,5 @@ import org.apache.logging.log4j.message.LoggerNameAwareMessage;
 @Getter
 @Setter
 public class LogoutRequestDto {
-    private String token;
     private Long userId;
 }
