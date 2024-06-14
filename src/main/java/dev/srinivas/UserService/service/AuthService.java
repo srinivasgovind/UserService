@@ -5,14 +5,13 @@ import dev.srinivas.UserService.exception.InvalidCredentialException;
 import dev.srinivas.UserService.exception.InvalidTokenException;
 import dev.srinivas.UserService.exception.UserNotFoundException;
 import dev.srinivas.UserService.mapper.UserEntityDTOMapper;
+import dev.srinivas.UserService.model.Role;
 import dev.srinivas.UserService.model.Session;
 import dev.srinivas.UserService.model.SessionStatus;
 import dev.srinivas.UserService.model.User;
 import dev.srinivas.UserService.repository.SessionRepository;
 import dev.srinivas.UserService.repository.UserRepository;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.MacAlgorithm;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -121,13 +120,21 @@ public class AuthService {
     public SessionStatus validate(String token, Long userId){
         //TODO check expiry // Jwts Parser -> parse the encoded JWT token to read the claims
         // Parses the JWT token and returns the claims
-//        JwtParser jwtParser = Jwts.parser().build();
-//        Jwt<?, ?> claims =jwtParser.parse(token);
+//       content = jwts.parser().verifyWith(secretKey).build().parseSignedContent(jwttoken).getPayload();
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUser_Id(token, userId);
 
         if(sessionOptional.isEmpty() || sessionOptional.get().getSessionStatus().equals(SessionStatus.ENDED)){
             throw new InvalidTokenException("token is invalid");
         }
+        Date currentTime = new Date();
+        if(sessionOptional.get().getExpiringAt().before(currentTime)){
+            return SessionStatus.ENDED;
+        }
+
+        //JWT Decoding
+        Jws<Claims> jwsClaims = Jwts.parser().build().parseSignedClaims(token);
+        String userIdFromPayload = (String) jwsClaims.getPayload().get("userId");
+        List<Role> roles = (List<Role>) jwsClaims.getPayload().get("roles");
 
         return SessionStatus.ACTIVE;
     }
