@@ -22,6 +22,8 @@ import org.springframework.util.MultiValueMapAdapter;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -67,7 +69,10 @@ public class AuthService {
         jsonForJWT.put("userId", user.getId());
         jsonForJWT.put("roles", user.getRoles());
         jsonForJWT.put("createdAt", new Date());
-        jsonForJWT.put("expiryAt", new Date(LocalDate.now().plusDays(3).toEpochDay()));
+        LocalDate localDate = LocalDate.now().plusDays(3);
+        LocalDateTime localDateTime = localDate.atStartOfDay();
+        Date expiryDate = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        jsonForJWT.put("expiryAt",expiryDate);
 
         String token = Jwts.builder()
                 .claims(jsonForJWT) //added the claims
@@ -81,6 +86,7 @@ public class AuthService {
         session.setSessionStatus(SessionStatus.ACTIVE);
         session.setToken(token);
         session.setUser(user);
+        session.setExpiringAt(expiryDate);
         sessionRepository.save(session);
 
         UserDto userDto = UserEntityDTOMapper.getUserDTOFromUserEntity(user);
@@ -110,11 +116,15 @@ public class AuthService {
     }
 
     public UserDto signUp(String email, String password){
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(bCryptPasswordEncoder.encode(password));
-        User savedUser = userRepository.save(user);
-        return UserDto.from(savedUser);
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if(userOptional.isEmpty()) {
+            User user = new User();
+            user.setEmail(email);
+            user.setPassword(bCryptPasswordEncoder.encode(password));
+            User savedUser = userRepository.save(user);
+            return UserDto.from(savedUser);
+        }
+        return null;
     }
 
     public SessionStatus validate(String token, Long userId){
@@ -126,15 +136,15 @@ public class AuthService {
         if(sessionOptional.isEmpty() || sessionOptional.get().getSessionStatus().equals(SessionStatus.ENDED)){
             throw new InvalidTokenException("token is invalid");
         }
-        Date currentTime = new Date();
-        if(sessionOptional.get().getExpiringAt().before(currentTime)){
-            return SessionStatus.ENDED;
-        }
+//        Date currentTime = new Date();
+//        if(sessionOptional.get().getExpiringAt().before(currentTime)){
+//            return SessionStatus.ENDED;
+//        }
 
         //JWT Decoding
-        Jws<Claims> jwsClaims = Jwts.parser().build().parseSignedClaims(token);
-        String userIdFromPayload = (String) jwsClaims.getPayload().get("userId");
-        List<Role> roles = (List<Role>) jwsClaims.getPayload().get("roles");
+//        Jws<Claims> jwsClaims = Jwts.parser().build().parseSignedClaims(token);
+//        String userIdFromPayload = (String) jwsClaims.getPayload().get("userId");
+//        List<Role> roles = (List<Role>) jwsClaims.getPayload().get("roles");
 
         return SessionStatus.ACTIVE;
     }

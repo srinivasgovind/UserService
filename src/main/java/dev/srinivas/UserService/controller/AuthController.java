@@ -49,13 +49,13 @@ public class AuthController {
 
     //below APIs are for testing purpose, Not for Business
 
-    @GetMapping("/session")
-    public ResponseEntity<List<Session>> getAllSession(){
-        return authService.getAllSession();
-    }
+//    @GetMapping("/session")
+//    public ResponseEntity<List<Session>> getAllSession(){
+//        return authService.getAllSession();
+//    }
 
-    @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsers(){
-        return authService.getAllUsers();
-    }
+//    @GetMapping("/users")
+//    public ResponseEntity<List<User>> getAllUsers(){
+//        return authService.getAllUsers();
+//    }
 }
