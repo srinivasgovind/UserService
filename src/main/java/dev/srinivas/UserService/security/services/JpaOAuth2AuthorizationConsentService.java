@@ -15,7 +15,9 @@ import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * JpaOAuth2AuthorizationConsentService Impl.
+ */
 @Component
 public class JpaOAuth2AuthorizationConsentService implements OAuth2AuthorizationConsentService {
     private final AuthorizationConsentRepository authorizationConsentRepository;

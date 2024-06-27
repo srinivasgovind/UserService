@@ -7,7 +7,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Optional;
-
+/**
+ * CustomSpringUserDetailsService Impl.
+ */
 public class CustomSpringUserDetailsService implements UserDetailsService {
 
 

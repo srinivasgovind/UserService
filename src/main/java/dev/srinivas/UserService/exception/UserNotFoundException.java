@@ -1,17 +1,32 @@
 package dev.srinivas.UserService.exception;
 
+/**
+ * Exception thrown when a user is not found.
+ */
 public class UserNotFoundException extends RuntimeException {
 
-    public UserNotFoundException(){
-
+    /**
+     * Constructs a new UserNotFoundException with no detail message.
+     */
+    public UserNotFoundException() {
+        super();
     }
 
-
-    public UserNotFoundException(String message){
+    /**
+     * Constructs a new UserNotFoundException with the specified detail message.
+     * @param message the detail message
+     */
+    public UserNotFoundException(String message) {
         super(message);
     }
 
-    public UserNotFoundException(String message, Throwable cause){
-        super(message,cause);
+    /**
+     * Constructs a new UserNotFoundException with the specified detail message and cause.
+     * @param message the detail message
+     * @param cause the cause of the exception
+     */
+    public UserNotFoundException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
+

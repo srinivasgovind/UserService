@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
-
+/**
+ * CustomGrantedAuthority Impl.
+ */
 @Getter
 @Setter
 @JsonDeserialize(as = CustomGrantedAuthority.class)

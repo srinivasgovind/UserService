@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
+/**
+ * Client Entity for OAuth
+ */
 @Entity
 @Table(name = "`client`")
 public class Client {

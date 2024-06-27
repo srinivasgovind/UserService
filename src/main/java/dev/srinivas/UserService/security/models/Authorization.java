@@ -4,7 +4,9 @@ package dev.srinivas.UserService.security.models;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-
+/**
+ * Authorization Entity for OAuth.
+ */
 @Entity
 @Table(name = "`authorization`")
 public class Authorization {

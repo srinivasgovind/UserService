@@ -26,24 +26,36 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
+/**
+ * Service class for handling authentication-related operations.
+ */
 @Service
 public class AuthService {
 
     private UserRepository userRepository;
-
     private SessionRepository sessionRepository;
-
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-
+    /**
+     * Constructor for AuthService.
+     * @param userRepository the user repository
+     * @param sessionRepository the session repository
+     * @param bCryptPasswordEncoder the password encoder
+     */
     public AuthService(UserRepository userRepository, SessionRepository sessionRepository, BCryptPasswordEncoder bCryptPasswordEncoder){
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
-    public ResponseEntity<UserDto> login (String email,String password){
-        //Get User Details from DB
+    /**
+     * Handles user login by validating credentials and generating a JWT token.
+     * @param email the user's email
+     * @param password the user's password
+     * @return a ResponseEntity containing the user details and a JWT token
+     */
+    public ResponseEntity<UserDto> login(String email, String password){
+        // Get User Details from DB
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if(userOptional.isEmpty()){
@@ -79,9 +91,9 @@ public class AuthService {
                 .signWith(key,algorithm)  //added the algo and key
                 .compact(); //building the token
 
-        //session creation
-        Session session = new Session();
 
+        // Session creation
+        Session session = new Session();
         session.setLoginAt(new Date());
         session.setSessionStatus(SessionStatus.ACTIVE);
         session.setToken(token);
@@ -94,17 +106,21 @@ public class AuthService {
         MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
         headers.add(HttpHeaders.SET_COOKIE, token);
 
-        ResponseEntity<UserDto> response = new ResponseEntity<>(userDto, headers, HttpStatus.OK);
-
-        return response;
+        return new ResponseEntity<>(userDto, headers, HttpStatus.OK);
     }
 
+    /**
+     * Handles user logout by invalidating the session.
+     * @param token the JWT token
+     * @param userId the user's ID
+     * @return a ResponseEntity indicating the logout status
+     */
     public ResponseEntity<Void> logout(String token, Long userId){
         // validations -> token exists, token is not expired, user exists else throw exception
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUser_Id(token, userId);
 
         if(sessionOptional.isEmpty()){
-            return null; // TODO throw exception here
+            throw new InvalidTokenException("Token is invalid or user does not exist");
         }
 
         Session session = sessionOptional.get();
@@ -112,9 +128,14 @@ public class AuthService {
         sessionRepository.save(session);
 
         return ResponseEntity.ok().build();
-
     }
 
+    /**
+     * Handles user sign-up by creating a new user in the database.
+     * @param email the user's email
+     * @param password the user's password
+     * @return the created user's details
+     */
     public UserDto signUp(String email, String password){
         Optional<User> userOptional = userRepository.findByEmail(email);
         if(userOptional.isEmpty()) {
@@ -127,33 +148,37 @@ public class AuthService {
         return null;
     }
 
+    /**
+     * Validates a JWT token and checks its status.
+     * @param token the JWT token
+     * @param userId the user's ID
+     * @return the session status
+     */
     public SessionStatus validate(String token, Long userId){
-        //TODO check expiry // Jwts Parser -> parse the encoded JWT token to read the claims
         // Parses the JWT token and returns the claims
-//       content = jwts.parser().verifyWith(secretKey).build().parseSignedContent(jwttoken).getPayload();
         Optional<Session> sessionOptional = sessionRepository.findByTokenAndUser_Id(token, userId);
 
         if(sessionOptional.isEmpty() || sessionOptional.get().getSessionStatus().equals(SessionStatus.ENDED)){
-            throw new InvalidTokenException("token is invalid");
+            throw new InvalidTokenException("Token is invalid");
         }
-//        Date currentTime = new Date();
-//        if(sessionOptional.get().getExpiringAt().before(currentTime)){
-//            return SessionStatus.ENDED;
-//        }
 
-        //JWT Decoding
-//        Jws<Claims> jwsClaims = Jwts.parser().build().parseSignedClaims(token);
-//        String userIdFromPayload = (String) jwsClaims.getPayload().get("userId");
-//        List<Role> roles = (List<Role>) jwsClaims.getPayload().get("roles");
-
+        // Return the active session status
         return SessionStatus.ACTIVE;
     }
 
+    /**
+     * Retrieves all sessions.
+     * @return a ResponseEntity containing a list of all sessions
+     */
     public ResponseEntity<List<Session>> getAllSession(){
         List<Session> sessions = sessionRepository.findAll();
         return ResponseEntity.ok(sessions);
     }
 
+    /**
+     * Retrieves all users.
+     * @return a ResponseEntity containing a list of all users
+     */
     public ResponseEntity<List<User>> getAllUsers(){
         return ResponseEntity.ok(userRepository.findAll());
     }

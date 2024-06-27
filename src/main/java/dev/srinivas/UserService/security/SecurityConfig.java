@@ -34,7 +34,9 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+/**
+ * SecurityConfig for OAuth2.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {

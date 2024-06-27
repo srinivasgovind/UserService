@@ -7,14 +7,18 @@ import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Base model class that other entity classes can extend to inherit common properties.
+ */
 @MappedSuperclass
 @Getter
 @Setter
 public class BaseModel {
 
+    /**
+     * The unique identifier for the entity.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-
 }
